@@ -29,7 +29,10 @@ namespace Spaceinvaders
             this.health = health;
             this.bullets = new List<Bullet>();
             this.texture = Raylib.LoadTexture("images/player.png");
+            shootSound = Raylib.LoadSound("Sounds/shoot.mp3");
+            
         }
+
         public void DrawScore()
         {
             Raylib.DrawText($"Points: {score}", Raylib.GetScreenWidth() - 150, 20, 20, Color.BLACK);
@@ -37,19 +40,24 @@ namespace Spaceinvaders
 
         public void Update(List<Enemy> enemies)
         {
-            // liikkuminen
-            if (Raylib.IsKeyDown(KeyboardKey.KEY_D) && position.X < Raylib.GetScreenWidth() - 20)
-                position.X += speed;
-            if (Raylib.IsKeyDown(KeyboardKey.KEY_A) && position.X > 20)
+           
+            Vector2 mousePosition = Raylib.GetMousePosition();
+            if (mousePosition.X < position.X && position.X > 20)
+            {
                 position.X -= speed;
-
-            // Fire bullets
+            }
+            else if (mousePosition.X > position.X && position.X < Raylib.GetScreenWidth() - 20)
+            {
+                position.X += speed;
+            }
+            
             if (Raylib.IsKeyPressed(KeyboardKey.KEY_SPACE))
             {
                 bullets.Add(new Bullet(new Vector2(position.X + 50, position.Y - 20), new Vector2(0, -5)));
+                Raylib.PlaySound(shootSound);
             }
 
-            // Update bullets
+            
             for (int i = bullets.Count - 1; i >= 0; i--)
             {
                 bullets[i].Update();
@@ -60,7 +68,7 @@ namespace Spaceinvaders
                 {
                     if (Raylib.CheckCollisionCircles(bullets[i].position, 5, enemies[j].position, 20))
                     {
-                        // Reduce enemy health
+                        
                         enemies.RemoveAt(j);
                         bullets.RemoveAt(i);
 
@@ -72,7 +80,7 @@ namespace Spaceinvaders
                     }
                 }
 
-                // Remove bullets that leave the screen
+                
                 for (int k = bullets.Count - 1; k >= 0; k--)
                 {
                     if (bullets[k].position.Y < 0 || bullets[k].position.Y > Raylib.GetScreenHeight())

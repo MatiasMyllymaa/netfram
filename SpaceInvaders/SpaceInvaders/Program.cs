@@ -1,6 +1,5 @@
 ﻿using System;
 using Raylib_cs;
-using System.Collections.Generic;
 using System.Numerics;
 using Spaceinvaders;
 
@@ -17,16 +16,24 @@ namespace SpaceInvaders
         List<Bullet> bullets;
         List<Enemy> enemies;
         private Vector2 position;
-
+        
         public bool moveRight = true;
         public static bool shouldChangeDirection = false;
         public bool moveDown = false;
         public float speed = 0.02f;
+        bool gameOver = false;
+        bool gameStarted = false;
 
+        StartScreen startScreen;
+
+        enum GameState { Playing, Win, Lose };
+        GameState gameState = GameState.Playing;
         void init()
         {
-            Raylib.InitWindow(screenWidth, screenHeight, "Space Invaders");
+            startScreen = new StartScreen();
 
+            Raylib.InitWindow(screenWidth, screenHeight, "Space Invaders");
+            Raylib.InitAudioDevice();
             float playerSpeed = 120;
             int playerSize = 40;
             Vector2 playerStart = new Vector2(screenWidth / 2, screenHeight - playerSize * 2);
@@ -56,103 +63,94 @@ namespace SpaceInvaders
         {
             init();
 
+            
             while (!Raylib.WindowShouldClose())
             {
                 
+                if (!gameStarted)
+                {
+                    startScreen.Draw();
+                    if (startScreen.Update())
+                    {
+                        gameStarted = true;
+                    }
+                }
 
                 
+                if (!gameOver && gameStarted)
+                {
+                    UpdateEnemies();
+                    player.Update(enemies);
+                    foreach (Enemy enemy in enemies.ToList())
+                    {
+                        enemy.Update(player);
+                    }
+                }
+
                 
+                Raylib.BeginDrawing();
 
-                switch (CheckGameState())
+
+                
+                if (!gameStarted)
                 {
-                    case GameState.InProgress:
-                        UpdateEnemies();
-
-                        // päivitä
-                        player.Update(enemies);
-                        foreach (Enemy enemy in enemies.ToList())
-                        {
-                            enemy.Update(player);
-                        }
-                        Raylib.BeginDrawing();
-                        Raylib.ClearBackground(Color.WHITE);
-                        player.Draw();
-                        foreach (Enemy enemy in enemies)
-                        {
-                            enemy.Draw();
-                        }
-                        player.DrawScore();
-
-                        Raylib.EndDrawing();
-                        break;
-
-
-                    case GameState.GameOver:
-                        // Game over näyttö
-                        Raylib.ClearBackground(Color.RED);
-                        Raylib.DrawText("You lost!", 400, 500, 50, Color.BLACK);
-                        Raylib.DrawText("Press ESC to exit or ENTER to restart game", 200, 600, 30, Color.BLACK);
-                        Raylib.EndDrawing();
-
-                        WaitForEscapeKeyPress();
-                        break;
-
-                    case GameState.Win:
-                        // voitto näyttö
-                        Raylib.ClearBackground(Color.GREEN);
-                        Raylib.DrawText("You Win!", 400, 500, 50, Color.BLACK);
-                        Raylib.DrawText("Press ESC to exit or ENTER to restart game", 200, 600, 30, Color.BLACK);
-                        Raylib.EndDrawing();
-
-                        WaitForEscapeKeyPress();
-                        
-                        break;
+                    startScreen.Draw();
                 }
+                else if (gameOver)
+                {
+                    drawGameOver();
+                }
+                else
+                {
+                    drawGame();
+                }
+
+                
+                if (player.health <= 0)
+                {
+                    gameState = GameState.Lose;
+                    gameOver = true;
+                }
+                else if (enemies.Count == 0)
+                {
+                    gameState = GameState.Win;
+                    gameOver = true;
+                }
+
+                Raylib.EndDrawing();
             }
+            
+
         }
 
-        private GameState CheckGameState()
+        void drawGameOver()
         {
-            if (player.health <= 0)
+            if (gameState == GameState.Lose)
             {
-                return GameState.GameOver;
-            }
+                Raylib.ClearBackground(Color.RED);
+                Raylib.DrawText("Game Over!", 250, 400, 50, Color.BLACK);
+                Raylib.DrawText("You got:" + player.score + " score", 225, 500, 40, Color.BLACK);
 
-            if (enemies.Count == 0)
+            }
+            else if (gameState == GameState.Win)
             {
-                return GameState.Win;
+                Raylib.ClearBackground(Color.LIME);
+                Raylib.DrawText("You Win!", 250, 400, 50, Color.BLACK);
+                Raylib.DrawText("You got:" + player.score + " score", 225, 500, 40, Color.BLACK);
+
             }
-
-            return GameState.InProgress;
+            Raylib.DrawText("Press ESC to quit", 175, 600, 30, Color.BLACK);
         }
 
-        private void WaitForEscapeKeyPress()
+        void drawGame()
         {
-            
-            
-                if (Raylib.IsKeyPressed(KeyboardKey.KEY_ESCAPE))
-                {
-                    Raylib.CloseWindow();
-                }
-                else if (Raylib.IsKeyPressed(KeyboardKey.KEY_ENTER))
-                {
-                    RestartGame();
-                }
-        }
-        private void RestartGame()
-        {
-            
-
-            // Reset game state
-            player.health = 3;
-            player.score = 0;
-        }
-
-        private enum GameState
-        {
-            InProgress,
-            GameOver,
-            Win
+            Raylib.ClearBackground(Color.WHITE);
+            player.Draw();
+            foreach (Enemy enemy in enemies)
+            {
+                enemy.Draw();
+            }
+            player.DrawScore();
         }
 
         void UpdateEnemies()
@@ -165,7 +163,7 @@ namespace SpaceInvaders
             {
                 enemy.position.X += enemySpeed * enemy.transform.direction.X;
 
-                // katsoo jos vihut osuu seinään
+                
                 if (enemy.position.X - enemy.transform.size / 2 <= 0 || enemy.position.X + enemy.transform.size / 2 >= screenWidth)
                 {
                     wallHit = true;
@@ -182,7 +180,7 @@ namespace SpaceInvaders
                 }
             }
 
-            // pitääkö vihollisten kääntyä
+            
             if (enemies.Count > 0 && moveRight && enemies.Last().position.X >= screenWidth - 20)
             {
                 moveRight = false;
@@ -197,7 +195,7 @@ namespace SpaceInvaders
                 position.Y += 10; 
             }
 
-            // seinään osuessaan vaihtavat suuntaa
+            
             if (shouldChangeDirection)
             {
                 speed *= -1;
