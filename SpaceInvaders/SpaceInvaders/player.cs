@@ -1,4 +1,4 @@
-﻿using Raylib_cs;
+﻿using Raylib_CsLo;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +20,7 @@ namespace Spaceinvaders
         public int health;
         public List<Bullet> bullets;
 
-        public Texture2D texture;
+        public Texture texture;
         public Sound shootSound;
         public Player(Vector2 position, Vector2 vector2, float speed, int health)
         {
@@ -35,7 +35,7 @@ namespace Spaceinvaders
 
         public void DrawScore()
         {
-            Raylib.DrawText($"Points: {score}", Raylib.GetScreenWidth() - 150, 20, 20, Color.BLACK);
+            Raylib.DrawText($"Points: {score}", Raylib.GetScreenWidth() - 150, 20, 20, Raylib.BLACK);
         }
 
         public void Update(List<Enemy> enemies)
@@ -93,12 +93,12 @@ namespace Spaceinvaders
         }
         public void Draw()
         {
-            Raylib.DrawTextureEx(texture, position, 0f, 0.1f, Color.WHITE);
+            Raylib.DrawTextureEx(texture, position, 0f, 0.1f, Raylib.WHITE);
 
             foreach (Bullet bullet in bullets)
                 bullet.Draw();
 
-            Raylib.DrawText("Health: " + health, 10, 10, 20, Color.BLACK);
+            Raylib.DrawText("Health: " + health, 10, 10, 20, Raylib.BLACK);
         }
     }
 }

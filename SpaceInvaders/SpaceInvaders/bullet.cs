@@ -1,4 +1,4 @@
-﻿using Raylib_cs;
+﻿using Raylib_CsLo;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +26,7 @@ namespace Spaceinvaders
 
         public void Draw()
         {
-            Raylib.DrawCircle((int)position.X, (int)position.Y, 5, Color.RED);
+            Raylib.DrawCircle((int)position.X, (int)position.Y, 5, Raylib.RED);
         }
     }
 }

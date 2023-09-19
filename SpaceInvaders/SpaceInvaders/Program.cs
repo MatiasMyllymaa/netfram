@@ -1,5 +1,5 @@
 ﻿using System;
-using Raylib_cs;
+using Raylib_CsLo;
 using System.Numerics;
 using Spaceinvaders;
 
@@ -21,18 +21,24 @@ namespace SpaceInvaders
         public static bool shouldChangeDirection = false;
         public bool moveDown = false;
         public float speed = 0.02f;
-        bool gameOver = false;
-        bool gameStarted = false;
+        
 
         StartScreen startScreen;
+        PauseMenu pauseMenu;
+        SettingsScreen settingsScreen;
 
-        enum GameState { Playing, Win, Lose };
-        GameState gameState = GameState.Playing;
+       
+        private enum GameState { Playing, Win, Lose, Pause, Settings, Main, Dev };
+        Stack<GameState> gameState = new Stack<GameState> ();
         void init()
         {
+            gameState.Push(GameState.Main);
             startScreen = new StartScreen();
+            pauseMenu = new PauseMenu();
+            settingsScreen = new SettingsScreen();
 
             Raylib.InitWindow(screenWidth, screenHeight, "Space Invaders");
+            Raylib.SetExitKey(KeyboardKey.KEY_BACKSPACE);
             Raylib.InitAudioDevice();
             float playerSpeed = 120;
             int playerSize = 40;
@@ -66,58 +72,75 @@ namespace SpaceInvaders
             
             while (!Raylib.WindowShouldClose())
             {
-                
-                if (!gameStarted)
-                {
-                    startScreen.Draw();
-                    if (startScreen.Update())
-                    {
-                        gameStarted = true;
-                    }
-                }
-
-                
-                if (!gameOver && gameStarted)
-                {
-                    UpdateEnemies();
-                    player.Update(enemies);
-                    foreach (Enemy enemy in enemies.ToList())
-                    {
-                        enemy.Update(player);
-                    }
-                }
-
-                
                 Raylib.BeginDrawing();
+                switch (gameState.Peek())
+                {
+                    case GameState.Main:
+                        startScreen.Draw();
+                        if (startScreen.IsStartPressed())
+                        {
+                            gameState.Push(GameState.Playing);
+                        }
+                    break;
+                    
+                    case GameState.Playing:
+                        drawGame();
+                        UpdateEnemies();
+                        player.Update(enemies);
+                        foreach (Enemy enemy in enemies.ToList())
+                        {
+                            enemy.Update(player);
+                        }
+                        if (player.health <= 0)
+                        {
+                            gameState.Push(GameState.Lose);
+                            
+                        }
+                        else if (enemies.Count == 0)
+                        {
+                            gameState.Push(GameState.Win);
+                            
+                        }
+                        if (Raylib.IsKeyPressed(KeyboardKey.KEY_ESCAPE))
+                        {
 
+                            gameState.Push(GameState.Pause);
 
+                        }
+                        break;
+                    
+                    case GameState.Settings: 
+                        settingsScreen.Draw();
+                        if (settingsScreen.Update())
+                        {
+                            gameState.Pop();
+                        }
+                        break;
+                    case GameState.Win:  
+                        break;
+                    case GameState.Lose: 
+                        drawGameOver(); 
+                        break;
+                    case GameState.Pause:
+                        pauseMenu.Draw();
+                        if (pauseMenu.GoToSettings())
+                        {
+                            gameState.Push(GameState.Settings);
+                        }
+                        if (pauseMenu.IsBackButtonPressed())
+                        {
+                            gameState.Pop();
+                        }
+                        if (pauseMenu.IsStartButtonPressed())
+                        {
+                            gameState.Push(GameState.Main);
+                        }
+                 
+                        break;
+                }
                 
-                if (!gameStarted)
-                {
-                    startScreen.Draw();
-                }
-                else if (gameOver)
-                {
-                    drawGameOver();
-                }
-                else
-                {
-                    drawGame();
-                }
-
-                
-                if (player.health <= 0)
-                {
-                    gameState = GameState.Lose;
-                    gameOver = true;
-                }
-                else if (enemies.Count == 0)
-                {
-                    gameState = GameState.Win;
-                    gameOver = true;
-                }
-
                 Raylib.EndDrawing();
+
             }
             
 
@@ -125,26 +148,26 @@ namespace SpaceInvaders
 
         void drawGameOver()
         {
-            if (gameState == GameState.Lose)
+            if (gameState.Peek() == GameState.Lose)
             {
-                Raylib.ClearBackground(Color.RED);
-                Raylib.DrawText("Game Over!", 250, 400, 50, Color.BLACK);
-                Raylib.DrawText("You got:" + player.score + " score", 225, 500, 40, Color.BLACK);
+                Raylib.ClearBackground(Raylib.RED);
+                Raylib.DrawText("Game Over!", 250, 400, 50, Raylib.BLACK);
+                Raylib.DrawText("You got:" + player.score + " score", 225, 500, 40, Raylib.BLACK);
 
             }
-            else if (gameState == GameState.Win)
+            else if (gameState.Peek() == GameState.Win)
             {
-                Raylib.ClearBackground(Color.LIME);
-                Raylib.DrawText("You Win!", 250, 400, 50, Color.BLACK);
-                Raylib.DrawText("You got:" + player.score + " score", 225, 500, 40, Color.BLACK);
+                Raylib.ClearBackground(Raylib.LIME);
+                Raylib.DrawText("You Win!", 250, 400, 50, Raylib.BLACK);
+                Raylib.DrawText("You got:" + player.score + " score", 225, 500, 40, Raylib.BLACK);
 
             }
-            Raylib.DrawText("Press ESC to quit", 175, 600, 30, Color.BLACK);
+            Raylib.DrawText("Press BACKSPACE to quit", 175, 600, 30, Raylib.BLACK);
         }
 
         void drawGame()
         {
-            Raylib.ClearBackground(Color.WHITE);
+            Raylib.ClearBackground(Raylib.WHITE);
             player.Draw();
             foreach (Enemy enemy in enemies)
             {

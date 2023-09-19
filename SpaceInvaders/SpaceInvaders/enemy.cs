@@ -1,4 +1,4 @@
-﻿using Raylib_cs;
+﻿using Raylib_CsLo;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +21,7 @@ namespace Spaceinvaders
 
         public bool isAlive = true;
 
-        private Texture2D texture;
+        private Texture texture;
 
   
 
@@ -88,7 +88,7 @@ namespace Spaceinvaders
         
         public void Draw()
         {
-            Raylib.DrawTextureEx(texture, position, 0f, 0.1f, Color.WHITE);
+            Raylib.DrawTextureEx(texture, position, 0f, 0.1f, Raylib.WHITE);
 
             foreach (Bullet bullet in bullets)
             bullet.Draw();
