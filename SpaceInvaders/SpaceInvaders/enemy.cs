@@ -10,6 +10,8 @@ namespace Spaceinvaders
 {
     internal class Enemy
     {
+        public bool isInvincible;
+
         public List<Bullet> bullets;
         private float bulletCooldown = 0;
         private float bulletCooldownMax = 12000;
@@ -31,6 +33,7 @@ namespace Spaceinvaders
 
         public Enemy(Vector2 position, Vector2 direction, int health, string texturePath, List<Player> players)
         {
+            isInvincible = false;
             this.position = position;
             this.health = health;
 
@@ -45,7 +48,7 @@ namespace Spaceinvaders
             bulletCooldownMax = Raylib.GetRandomValue(5000, 15000);
         }
 
-        public void Update(Player player)
+        public void Update(Player player, bool playerInvincible)
         {
             
             if (health <= 0)
@@ -68,7 +71,11 @@ namespace Spaceinvaders
             foreach (Bullet bullet in bullets.ToList())
             {
                 bullet.Update();
-
+                if (playerInvincible)
+                {
+                    
+                    continue;
+                }
                 foreach (Player otherPlayer in players)
                 {
                     if (Raylib.CheckCollisionCircles(bullet.position, 5, player.position, 20))
