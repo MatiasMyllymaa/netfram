@@ -1,9 +1,6 @@
-﻿using System;
-using Raylib_CsLo;
+﻿using Raylib_CsLo;
 using System.Numerics;
 using Spaceinvaders;
-using System.Collections.Generic;
-using static SpaceInvaders.inv;
 
 namespace SpaceInvaders
 {
@@ -18,7 +15,10 @@ namespace SpaceInvaders
         List<Bullet> bullets;
         List<Enemy> enemies;
         private Vector2 position;
-        
+
+        List<Particles> particles;
+        Random randomGenerator;
+
         public bool moveRight = true;
         public static bool shouldChangeDirection = false;
         public bool moveDown = false;
@@ -31,12 +31,15 @@ namespace SpaceInvaders
         PauseMenu pauseMenu;
         SettingsScreen settingsScreen;
         developer developerMenu;
-
+        const int gamefps = 60;
        
         public enum GameState { Playing, Win, Lose, Pause, Settings, Main, Dev };
         Stack<GameState> gameState = new Stack<GameState> ();
         void init()
         {
+
+            float deltaTime = 1.0f / gamefps;
+
             gameState.Clear(); 
             gameState.Push(GameState.Main); 
 
@@ -46,6 +49,9 @@ namespace SpaceInvaders
             settingsScreen = new SettingsScreen();
             developerMenu = new developer();
 
+            particles = new List<Particles>();
+            randomGenerator = new Random();
+
             player = null;
             bullets = new List<Bullet>();
             enemies = new List<Enemy>();
@@ -54,8 +60,9 @@ namespace SpaceInvaders
             Raylib.SetExitKey(KeyboardKey.KEY_BACKSPACE);
             
             Raylib.InitAudioDevice();
-            float playerSpeed = 120;
+            float playerSpeed = 120 * deltaTime;
             int playerSize = 40;
+            speed = 120 * deltaTime;
             Vector2 playerStart = new Vector2(screenWidth / 2, screenHeight - playerSize * 2);
 
             player = new Player(playerStart, new Vector2(0, 0), playerSpeed, playerSize);
@@ -70,9 +77,60 @@ namespace SpaceInvaders
 
                 enemies.Add(enemy);
             }
-                Raylib.SetTargetFPS(2500);
+                Raylib.SetTargetFPS(gamefps);
+            
+            
         }
+        public void OnEnemyKilled(object sender, Vector2 position)
+        {
+            List<Color> colors = new List<Color>();
+            colors.Add(Raylib.GRAY);
+            colors.Add(Raylib.YELLOW);
+            colors.Add(Raylib.ORANGE);
 
+            for (int i = 0; i < 3; i++)
+            {
+                Vector2 direction = new Vector2(
+                randomGenerator.NextSingle() * 2 - 1,
+                randomGenerator.NextSingle() * 2 - 1);
+                direction = Vector2.Normalize(direction);
+
+                particles.Add(new Particles(position, direction, 1f, 5, colors[randomGenerator.Next(colors.Count)], 1.0f, 5.0f));
+            }
+        }
+        public void PlayerSmoke()
+        {
+            if (player.health > 0)
+            {
+                // Calculate the position for the player's smoke particles
+                Vector2 smokePosition = player.position + new Vector2(50, 45); // Adjust the offsets as needed
+
+                // Create a new smoke particle and add it to the list
+                Vector2 smokeDirection = new Vector2(0, 1); // Smoke particles go downwards
+                float smokeSpeed = 0.7f;
+                float smokeRadius = 10;
+                Color smokeColor = Raylib.GRAY; // You can change the color if needed
+                float smokeLifetime = 1.0f; // Adjust the lifetime as desired
+                float smokeMaxSize = 10.0f; // Adjust the maximum size as desired
+                particles.Add(new Particles(smokePosition, smokeDirection, smokeSpeed, smokeRadius, smokeColor, smokeLifetime, smokeMaxSize));
+
+                // Update and remove expired smoke particles
+                for (int i = particles.Count - 1; i >= 0; i--)
+                {
+                    particles[i].Update();
+                    if (particles[i].lifetime <= 0)
+                    {
+                        particles.RemoveAt(i);
+                    }
+                }
+
+                // Draw the smoke particles
+                foreach (Particles smokeParticle in particles)
+                {
+                    smokeParticle.Draw();
+                }
+            }
+        }
         public void GameLoop()
         {
             init();
@@ -100,6 +158,8 @@ namespace SpaceInvaders
                         
                         UpdateEnemies();
                         player.Update(enemies);
+                        PlayerSmoke();
+                        
                         foreach (Enemy enemy in enemies.ToList())
                         {
                             enemy.Update(player, playerInvincible);
@@ -124,10 +184,14 @@ namespace SpaceInvaders
                         {
                             reset(GameState.Playing);
                         }
+                        
                         if (Raylib.IsKeyPressed(KeyboardKey.KEY_F1))
                         {
+#if DEBUG
                             gameState.Push(GameState.Dev);
+#endif
                         }
+
                         break;
                     
                     case GameState.Settings: 
@@ -185,10 +249,7 @@ namespace SpaceInvaders
             
 
         }
-        public void Dev()
-        {
-
-        }
+       
         public void reset(GameState Target)
         {
             
@@ -196,8 +257,9 @@ namespace SpaceInvaders
             int playerSize = 40;
             Vector2 playerStart = new Vector2(screenWidth / 2, screenHeight - playerSize * 2);
             player = new Player(playerStart, new Vector2(0, 0), playerSpeed, playerSize);
+            player.enemyKilled += OnEnemyKilled;
 
-            
+
             bullets.Clear();
 
             
@@ -245,6 +307,10 @@ namespace SpaceInvaders
             foreach (Enemy enemy in enemies)
             {
                 enemy.Draw();
+            }
+            foreach (Particles particle in particles)
+            {
+                particle.Draw();
             }
             player.DrawScore();
         }

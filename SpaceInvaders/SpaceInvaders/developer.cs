@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Raylib_CsLo;
+﻿using Raylib_CsLo;
 
 namespace Spaceinvaders
 {

@@ -1,10 +1,5 @@
 ﻿using Raylib_CsLo;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Spaceinvaders
 {
@@ -16,7 +11,7 @@ namespace Spaceinvaders
         public Bullet(Vector2 position, Vector2 velocity)
         {
             this.position = position;
-            this.velocity = velocity / 20;
+            this.velocity = velocity;
         }
 
         public void Update()

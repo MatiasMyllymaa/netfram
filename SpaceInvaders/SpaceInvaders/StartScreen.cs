@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.Design;
+﻿using System;
+using System.ComponentModel.Design;
 using System.Numerics;
 using Raylib_CsLo;
 using SpaceInvaders;
@@ -68,6 +69,10 @@ namespace Spaceinvaders
                 int exitButtonX = (screenWidth - exitButtonWidth) / 2;
                 int exitButtonY = 650;
                 exitButtonPressed = RayGui.GuiButton(new Rectangle(exitButtonX, exitButtonY, exitButtonWidth, exitButtonHeight), "Exit");
+                if (exitButtonPressed)
+                {
+                    Environment.Exit(0);
+                }
             }else if(currentState == ScreenState.Settings)
             {
                 settingsScreen.Draw();
